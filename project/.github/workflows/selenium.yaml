@@ -1,7 +1,6 @@
 name: Selenium Automation CI
 
 on:
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
     inputs:
       suite:
@@ -12,8 +11,6 @@ on:
         options:
           - smoke
           - regression
-
-  # Automatically runs Smoke tests on every Pull Request to main
   pull_request:
     branches: [ main ]
 
@@ -30,7 +27,9 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'maven' # Change to 'gradle' if you use Gradle
+          cache: 'maven'
+          # Tells Java setup where to find the pom.xml for caching
+          cache-dependency-path: 'project/pom.xml'
 
       - name: Set up Chrome Browser
         uses: browser-actions/setup-chrome@v1
@@ -38,18 +37,17 @@ jobs:
           chrome-version: stable
 
       - name: Run Selenium Tests
+        # This line changes the execution directory to your subfolder!
+        working-directory: ./project
         run: |
-          # Determine which XML to run. 
-          # If triggered by a PR, default to smoke. Otherwise, use the manual selection.
           SUITE_TYPE="${{ github.event.inputs.suite || 'smoke' }}"
-          echo "Running $SUITE_TYPE tests..."
-          
-          # Maven command executing the specific XML
+          echo "Running $SUITE_TYPE tests inside the project folder..."
           mvn test -DsuiteXmlFile=${SUITE_TYPE}.xml
 
       - name: Upload Test Report
-        if: always() # Ensures reports upload even if tests fail
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-reports-${{ github.run_id }}
-          path: target/surefire-reports/ # Change to build/reports/ if using Gradle
+          # Updated path to look inside the subfolder
+          path: project/target/surefire-reports/
