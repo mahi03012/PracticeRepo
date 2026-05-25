@@ -19,7 +19,7 @@ public class first {
 // 2. Security & resource fixes required for Linux cloud runners
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
-        WebDriver driver = new ChromeDriver();
+        WebDriver driver = new ChromeDriver(options);
 
         driver.get("https://google.com");
 
@@ -39,7 +39,7 @@ public class first {
 // 2. Security & resource fixes required for Linux cloud runners
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
-        WebDriver driver = new ChromeDriver();
+        WebDriver driver = new ChromeDriver(options);
 
         driver.get("https://www.deloitte.com/global/en/careers.html");
 
