@@ -1,16 +1,19 @@
 name: Selenium Automation CI
 
 on:
+  # Allows you to manually trigger the suites from the GitHub Actions tab
   workflow_dispatch:
     inputs:
       suite:
         description: 'Choose the test suite to run'
         required: true
-        default: 'smoke'
+        default: 'Smoke'
         type: choice
         options:
-          - smoke
-          - regression
+          - Smoke
+          - Regression
+
+  # Automatically runs the Smoke suite on every Pull Request to main
   pull_request:
     branches: [ main ]
 
@@ -19,35 +22,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+    - name: Checkout Code
+      uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'maven'
-          # Tells Java setup where to find the pom.xml for caching
-          cache-dependency-path: 'project/pom.xml'
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: 'maven'
+        # Tells the setup tool where your pom.xml is for caching dependencies
+        cache-dependency-path: 'project/pom.xml' 
 
-      - name: Set up Chrome Browser
-        uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: stable
+    - name: Set up Chrome Browser
+      uses: browser-actions/setup-chrome@v1
+      with:
+        chrome-version: stable
 
-      - name: Run Selenium Tests
-        # This line changes the execution directory to your subfolder!
-        working-directory: ./project
-        run: |
-          SUITE_TYPE="${{ github.event.inputs.suite || 'smoke' }}"
-          echo "Running $SUITE_TYPE tests inside the project folder..."
-          mvn test -DsuiteXmlFile=${SUITE_TYPE}.xml
+    - name: Run Selenium Tests
+      # This critical line forces the runner to step into your 'project' subfolder
+      working-directory: ./project 
+      run: |
+        # Use the chosen manual input, or default to Smoke if triggered by a PR
+        SUITE_TYPE="${{ github.event.inputs.suite || 'Smoke' }}"
+        echo "Navigating to project directory and running $SUITE_TYPE.xml..."
+        
+        # Maven command executing your specific XML file name
+        mvn test -DsuiteXmlFile=${SUITE_TYPE}.xml
 
-      - name: Upload Test Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-reports-${{ github.run_id }}
-          # Updated path to look inside the subfolder
-          path: project/target/surefire-reports/
+    - name: Upload Test Report
+      if: always() # Captures reports even if tests fail
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-reports-${{ github.run_id }}
+        # Looks for the TestNG output folder inside the project subfolder
+        path: project/target/surefire-reports/
